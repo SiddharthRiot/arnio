@@ -21,11 +21,17 @@ class TestGILReleaseCsvRead:
 
         results = [None, None]
 
-        t1 = threading.Thread(target=run_in_thread, args=(lambda: ar.read_csv(str(path)), results, 0))
-        t2 = threading.Thread(target=run_in_thread, args=(lambda: ar.read_csv(str(path)), results, 1))
+        t1 = threading.Thread(
+            target=run_in_thread, args=(lambda: ar.read_csv(str(path)), results, 0)
+        )
+        t2 = threading.Thread(
+            target=run_in_thread, args=(lambda: ar.read_csv(str(path)), results, 1)
+        )
 
-        t1.start(); t2.start()
-        t1.join(); t2.join()
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
 
         assert results[0].shape[0] == 500
         assert results[1].shape[0] == 500
@@ -37,11 +43,15 @@ class TestGILReleaseCsvRead:
 
         results = [None, None, None]
         threads = [
-            threading.Thread(target=run_in_thread, args=(lambda: ar.read_csv(str(path)), results, i))
+            threading.Thread(
+                target=run_in_thread, args=(lambda: ar.read_csv(str(path)), results, i)
+            )
             for i in range(3)
         ]
-        for t in threads: t.start()
-        for t in threads: t.join()
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
         for r in results:
             assert r.shape == (3, 2)
@@ -55,11 +65,17 @@ class TestGILReleaseCleaningOps:
         frame = ar.read_csv(str(path))
 
         results = [None, None]
-        t1 = threading.Thread(target=run_in_thread, args=(lambda: ar.drop_nulls(frame), results, 0))
-        t2 = threading.Thread(target=run_in_thread, args=(lambda: ar.drop_nulls(frame), results, 1))
+        t1 = threading.Thread(
+            target=run_in_thread, args=(lambda: ar.drop_nulls(frame), results, 0)
+        )
+        t2 = threading.Thread(
+            target=run_in_thread, args=(lambda: ar.drop_nulls(frame), results, 1)
+        )
 
-        t1.start(); t2.start()
-        t1.join(); t2.join()
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
 
         assert results[0].shape[0] == 2
         assert results[1].shape[0] == 2
@@ -71,11 +87,17 @@ class TestGILReleaseCleaningOps:
         frame = ar.read_csv(str(path))
 
         results = [None, None]
-        t1 = threading.Thread(target=run_in_thread, args=(lambda: ar.drop_duplicates(frame), results, 0))
-        t2 = threading.Thread(target=run_in_thread, args=(lambda: ar.drop_duplicates(frame), results, 1))
+        t1 = threading.Thread(
+            target=run_in_thread, args=(lambda: ar.drop_duplicates(frame), results, 0)
+        )
+        t2 = threading.Thread(
+            target=run_in_thread, args=(lambda: ar.drop_duplicates(frame), results, 1)
+        )
 
-        t1.start(); t2.start()
-        t1.join(); t2.join()
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
 
         assert results[0].shape[0] == 2
         assert results[1].shape[0] == 2
@@ -87,11 +109,17 @@ class TestGILReleaseCleaningOps:
         frame = ar.read_csv(str(path))
 
         results = [None, None]
-        t1 = threading.Thread(target=run_in_thread, args=(lambda: ar.strip_whitespace(frame), results, 0))
-        t2 = threading.Thread(target=run_in_thread, args=(lambda: ar.strip_whitespace(frame), results, 1))
+        t1 = threading.Thread(
+            target=run_in_thread, args=(lambda: ar.strip_whitespace(frame), results, 0)
+        )
+        t2 = threading.Thread(
+            target=run_in_thread, args=(lambda: ar.strip_whitespace(frame), results, 1)
+        )
 
-        t1.start(); t2.start()
-        t1.join(); t2.join()
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
 
         df0 = ar.to_pandas(results[0])
         df1 = ar.to_pandas(results[1])
@@ -105,24 +133,41 @@ class TestGILReleaseCleaningOps:
         frame = ar.read_csv(str(path))
 
         results = [None, None]
-        t1 = threading.Thread(target=run_in_thread, args=(lambda: ar.normalize_case(frame, subset=["name"]), results, 0))
-        t2 = threading.Thread(target=run_in_thread, args=(lambda: ar.normalize_case(frame, subset=["name"]), results, 1))
+        t1 = threading.Thread(
+            target=run_in_thread,
+            args=(lambda: ar.normalize_case(frame, subset=["name"]), results, 0),
+        )
+        t2 = threading.Thread(
+            target=run_in_thread,
+            args=(lambda: ar.normalize_case(frame, subset=["name"]), results, 1),
+        )
 
-        t1.start(); t2.start()
-        t1.join(); t2.join()
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
 
         df0 = ar.to_pandas(results[0])
         assert df0["name"].iloc[0] == "alice"
+
 
 class TestGILReleaseEdgeCases:
     def test_concurrent_read_invalid_path(self):
         """Concurrent reads with invalid path should raise errors safely."""
         results = [None, None]
-        t1 = threading.Thread(target=run_in_thread, args=(lambda: ar.read_csv("nonexistent.csv"), results, 0))
-        t2 = threading.Thread(target=run_in_thread, args=(lambda: ar.read_csv("nonexistent.csv"), results, 1))
+        t1 = threading.Thread(
+            target=run_in_thread,
+            args=(lambda: ar.read_csv("nonexistent.csv"), results, 0),
+        )
+        t2 = threading.Thread(
+            target=run_in_thread,
+            args=(lambda: ar.read_csv("nonexistent.csv"), results, 1),
+        )
 
-        t1.start(); t2.start()
-        t1.join(); t2.join()
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
 
         assert isinstance(results[0], Exception)
         assert isinstance(results[1], Exception)
@@ -133,11 +178,17 @@ class TestGILReleaseEdgeCases:
         path.write_text("name,age\n")
 
         results = [None, None]
-        t1 = threading.Thread(target=run_in_thread, args=(lambda: ar.read_csv(str(path)), results, 0))
-        t2 = threading.Thread(target=run_in_thread, args=(lambda: ar.read_csv(str(path)), results, 1))
+        t1 = threading.Thread(
+            target=run_in_thread, args=(lambda: ar.read_csv(str(path)), results, 0)
+        )
+        t2 = threading.Thread(
+            target=run_in_thread, args=(lambda: ar.read_csv(str(path)), results, 1)
+        )
 
-        t1.start(); t2.start()
-        t1.join(); t2.join()
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
 
         assert results[0].shape[0] == 0
         assert results[1].shape[0] == 0
@@ -148,11 +199,17 @@ class TestGILReleaseEdgeCases:
         path.write_text("name,age,score\nAlice,30,95.5\nBob,25,88.0\n")
 
         results = [None, None]
-        t1 = threading.Thread(target=run_in_thread, args=(lambda: ar.scan_csv(str(path)), results, 0))
-        t2 = threading.Thread(target=run_in_thread, args=(lambda: ar.scan_csv(str(path)), results, 1))
+        t1 = threading.Thread(
+            target=run_in_thread, args=(lambda: ar.scan_csv(str(path)), results, 0)
+        )
+        t2 = threading.Thread(
+            target=run_in_thread, args=(lambda: ar.scan_csv(str(path)), results, 1)
+        )
 
-        t1.start(); t2.start()
-        t1.join(); t2.join()
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
 
         assert isinstance(results[0], dict)
         assert isinstance(results[1], dict)
@@ -165,15 +222,22 @@ class TestGILReleaseEdgeCases:
         frame = ar.read_csv(str(path))
 
         results = [None, None]
-        t1 = threading.Thread(target=run_in_thread, args=(lambda: ar.drop_nulls(frame, subset=["name"]), results, 0))
-        t2 = threading.Thread(target=run_in_thread, args=(lambda: ar.drop_nulls(frame, subset=["name"]), results, 1))
+        t1 = threading.Thread(
+            target=run_in_thread,
+            args=(lambda: ar.drop_nulls(frame, subset=["name"]), results, 0),
+        )
+        t2 = threading.Thread(
+            target=run_in_thread,
+            args=(lambda: ar.drop_nulls(frame, subset=["name"]), results, 1),
+        )
 
-        t1.start(); t2.start()
-        t1.join(); t2.join()
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
 
         assert results[0].shape[0] == 3
         assert results[1].shape[0] == 3
-
 
     def test_mixed_concurrent_operations(self, tmp_path):
         """Different GIL-releasing ops should run concurrently without interference."""
@@ -182,11 +246,21 @@ class TestGILReleaseEdgeCases:
         frame = ar.read_csv(str(path))
 
         results = [None, None, None]
-        t1 = threading.Thread(target=run_in_thread, args=(lambda: ar.drop_nulls(frame), results, 0))
-        t2 = threading.Thread(target=run_in_thread, args=(lambda: ar.strip_whitespace(frame), results, 1))
-        t3 = threading.Thread(target=run_in_thread, args=(lambda: ar.drop_duplicates(frame), results, 2))
+        t1 = threading.Thread(
+            target=run_in_thread, args=(lambda: ar.drop_nulls(frame), results, 0)
+        )
+        t2 = threading.Thread(
+            target=run_in_thread, args=(lambda: ar.strip_whitespace(frame), results, 1)
+        )
+        t3 = threading.Thread(
+            target=run_in_thread, args=(lambda: ar.drop_duplicates(frame), results, 2)
+        )
 
-        t1.start(); t2.start(); t3.start()
-        t1.join(); t2.join(); t3.join()
+        t1.start()
+        t2.start()
+        t3.start()
+        t1.join()
+        t2.join()
+        t3.join()
 
         assert results[2].shape[0] == 4

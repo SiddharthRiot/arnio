@@ -39,6 +39,7 @@ def run_single_threaded(path, n=4):
 
 def run_multi_threaded(path, n=4):
     """Run n read+clean ops concurrently across threads."""
+
     def task():
         frame = ar.read_csv(path)
         ar.drop_nulls(frame)
