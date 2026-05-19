@@ -5,6 +5,7 @@ Data cleaning functions.
 
 from __future__ import annotations
 
+import copy
 import unicodedata
 from collections.abc import Mapping, Sequence
 from typing import Any
@@ -703,7 +704,8 @@ def normalize_unicode(
             dtype_hints[name] = dtype
     new_cpp_frame = _Frame.from_dict(new_columns, dtype_hints)
     return ArFrame(
-        new_cpp_frame, attrs=dict(frame._attrs) if frame._attrs is not None else None
+        new_cpp_frame,
+        attrs=copy.deepcopy(frame._attrs) if frame._attrs is not None else None,
     )
 
 
