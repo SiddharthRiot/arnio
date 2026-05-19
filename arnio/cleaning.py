@@ -10,6 +10,8 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from ._core import (
+    _DType,
+    _Frame,
     _cast_types,
     _clip_numeric,
     _drop_duplicates,
@@ -431,7 +433,7 @@ def clip_numeric(
         non_numeric_columns = [col for col in subset if not _is_supported_numeric(col)]
         if non_numeric_columns:
             raise ValueError(
-                "clip_numeric only supports numeric columns: " f"{non_numeric_columns}"
+                f"clip_numeric only supports numeric columns: {non_numeric_columns}"
             )
 
         # Empty subset — nothing to clip, return the frame unchanged.
@@ -554,9 +556,23 @@ def parse_bool_strings(
     df = to_pandas(frame).copy()
     if true_values is None:
         true_values = {"true", "yes", "y", "1"}
+    else:
+        invalid = [v for v in true_values if not isinstance(v, str)]
+        if invalid:
+            raise TypeError(
+                f"true_values must contain only strings, got "
+                f"{type(invalid[0]).__name__}"
+            )
 
     if false_values is None:
         false_values = {"false", "no", "n", "0"}
+    else:
+        invalid = [v for v in false_values if not isinstance(v, str)]
+        if invalid:
+            raise TypeError(
+                f"false_values must contain only strings, got "
+                f"{type(invalid[0]).__name__}"
+            )
 
     true_values = {v.strip().lower() for v in true_values}
     false_values = {v.strip().lower() for v in false_values}
@@ -643,10 +659,31 @@ def normalize_unicode(
     subset: list[str] | None = None,
     form: str = "NFC",
 ) -> ArFrame:
-    """Normalize Unicode text columns."""
+    """Normalize Unicode text columns.
 
-    from .convert import from_pandas, to_pandas
+    This implementation operates natively on the ArFrame's internal columnar
+    representation, avoiding a full pandas roundtrip. Only STRING columns are
+    processed; all other column types are cloned unchanged.
 
+    Parameters
+    ----------
+    frame : ArFrame
+        Input data frame.
+    subset : list[str] | None, optional
+        Column names to normalize. When None, all STRING columns are targeted.
+    form : str, default "NFC"
+        Unicode normalization form. One of "NFC", "NFD", "NFKC", "NFKD".
+
+    Returns
+    -------
+    ArFrame
+        New frame with Unicode-normalized string columns.
+
+    Raises
+    ------
+    ValueError
+        If *form* is not a recognised normalization form.
+    """
     valid_forms = {"NFC", "NFD", "NFKC", "NFKD"}
 
     if form not in valid_forms:
@@ -659,20 +696,41 @@ def normalize_unicode(
             operation="normalize_unicode",
         )
 
-    df = to_pandas(frame).copy()
+    cpp_frame = frame._frame
+    num_cols = cpp_frame.num_cols()
 
-    columns = (
-        subset
+    target_names: set[str] = (
+        set(subset)
         if subset is not None
-        else df.select_dtypes(include=["object", "string"]).columns
+        else {
+            cpp_frame.column_by_index(i).name()
+            for i in range(num_cols)
+            if cpp_frame.column_by_index(i).dtype() == _DType.STRING
+        }
     )
 
-    for col in columns:
-        df[col] = df[col].apply(
-            lambda x: unicodedata.normalize(form, x) if isinstance(x, str) else x
-        )
+    new_columns: dict[str, list[object]] = {}
+    dtype_hints: dict[str, _DType] = {}
 
-    return from_pandas(df)
+    _normalize = unicodedata.normalize
+
+    for i in range(num_cols):
+        col = cpp_frame.column_by_index(i)
+        name = col.name()
+        dtype = col.dtype()
+
+        if name in target_names and dtype == _DType.STRING:
+            values = col.to_python_list()
+            new_columns[name] = [
+                _normalize(form, v) if v is not None else None for v in values
+            ]
+            dtype_hints[name] = _DType.STRING
+        else:
+            new_columns[name] = col.to_python_list()
+            dtype_hints[name] = dtype
+
+    new_cpp_frame = _Frame.from_dict(new_columns, dtype_hints)
+    return ArFrame(new_cpp_frame, attrs=frame._attrs)
 
 
 def rename_columns(
@@ -1008,7 +1066,6 @@ def combine_columns(
         raise ValueError("subset must contain at least one column")
 
     if output_column in df.columns:
-
         raise ValueError(f"Output column '{output_column}' already exists.")
 
     combined = (

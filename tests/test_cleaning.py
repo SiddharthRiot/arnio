@@ -699,6 +699,125 @@ class TestNormalizeUnicode:
 
         assert result_df["text"].iloc[0] == "café"
 
+    def test_normalize_unicode_no_pandas_roundtrip(self):
+        """normalize_unicode must not import or call pandas internally."""
+        import sys
+        import importlib
+        import pandas as pd
+        import arnio as ar
+        import arnio.cleaning as cleaning_mod
+
+        df = pd.DataFrame({"text": ["cafe\u0301", "na\u00efve"]})
+        frame = ar.from_pandas(df)
+
+        # Patch to_pandas inside cleaning module so it raises if called.
+        original = getattr(cleaning_mod, "to_pandas", None)
+
+        def _should_not_be_called(*a, **kw):
+            raise AssertionError(
+                "normalize_unicode called to_pandas — pandas roundtrip detected!"
+            )
+
+        # Only patch if the symbol is present (it must NOT be after our fix).
+        if original is not None:
+            cleaning_mod.to_pandas = _should_not_be_called
+        try:
+            result = ar.normalize_unicode(frame)
+        finally:
+            if original is not None:
+                cleaning_mod.to_pandas = original
+
+        result_df = ar.to_pandas(result)
+        assert result_df["text"].tolist() == ["café", "naïve"]
+
+    def test_normalize_unicode_nfd_form(self):
+        """NFD form must decompose precomposed characters."""
+        import unicodedata
+        import pandas as pd
+        import arnio as ar
+
+        df = pd.DataFrame({"text": ["café"]})  # NFC precomposed
+        frame = ar.from_pandas(df)
+        result = ar.normalize_unicode(frame, form="NFD")
+        result_df = ar.to_pandas(result)
+        # NFD decomposes é → e + combining accent
+        assert unicodedata.normalize("NFD", result_df["text"].iloc[0]) == result_df["text"].iloc[0]
+
+    def test_normalize_unicode_nfkc_form(self):
+        """NFKC must handle compatibility decomposition followed by composition."""
+        import pandas as pd
+        import arnio as ar
+
+        # ﬁ (U+FB01 LATIN SMALL LIGATURE FI) → fi under NFKC
+        df = pd.DataFrame({"text": ["\ufb01le"]})
+        frame = ar.from_pandas(df)
+        result = ar.normalize_unicode(frame, form="NFKC")
+        result_df = ar.to_pandas(result)
+        assert result_df["text"].iloc[0] == "file"
+
+    def test_normalize_unicode_preserves_nulls(self):
+        """Null values in string columns must be preserved, not coerced."""
+        import pandas as pd
+        import arnio as ar
+
+        df = pd.DataFrame({"text": ["cafe\u0301", None, "na\u00efve"]})
+        frame = ar.from_pandas(df)
+        result = ar.normalize_unicode(frame)
+        result_df = ar.to_pandas(result)
+        assert result_df["text"].iloc[0] == "café"
+        assert pd.isna(result_df["text"].iloc[1])
+        assert result_df["text"].iloc[2] == "naïve"
+
+    def test_normalize_unicode_non_string_columns_unchanged(self):
+        """Numeric and boolean columns must not be touched."""
+        import pandas as pd
+        import arnio as ar
+
+        df = pd.DataFrame({"text": ["cafe\u0301"], "score": [42], "flag": [True]})
+        frame = ar.from_pandas(df)
+        result = ar.normalize_unicode(frame)
+        result_df = ar.to_pandas(result)
+        assert result_df["score"].iloc[0] == 42
+        assert result_df["flag"].iloc[0] is True or result_df["flag"].iloc[0] == True  # noqa: E712
+
+    def test_normalize_unicode_subset_only_targets_specified_columns(self):
+        """With subset, only listed columns are normalized."""
+        import pandas as pd
+        import arnio as ar
+
+        raw_a = "cafe\u0301"   # NFD café
+        raw_b = "re\u0301sume\u0301"  # NFD résumé
+        df = pd.DataFrame({"a": [raw_a], "b": [raw_b]})
+        frame = ar.from_pandas(df)
+        result = ar.normalize_unicode(frame, subset=["a"])
+        result_df = ar.to_pandas(result)
+        # 'a' normalised, 'b' left as-is
+        assert result_df["a"].iloc[0] == "café"
+        assert result_df["b"].iloc[0] == raw_b
+
+    def test_normalize_unicode_invalid_form_raises(self):
+        """An unrecognised form must raise ValueError."""
+        import pandas as pd
+        import arnio as ar
+        import pytest
+
+        df = pd.DataFrame({"text": ["hello"]})
+        frame = ar.from_pandas(df)
+        with pytest.raises(ValueError, match="Unsupported Unicode normalization form"):
+            ar.normalize_unicode(frame, form="XYZ")
+
+    def test_normalize_unicode_large_frame_no_pandas(self):
+        """Performance smoke test: 10 000 rows should complete without error."""
+        import pandas as pd
+        import arnio as ar
+
+        n = 10_000
+        df = pd.DataFrame({"text": ["cafe\u0301"] * n, "other": list(range(n))})
+        frame = ar.from_pandas(df)
+        result = ar.normalize_unicode(frame)
+        result_df = ar.to_pandas(result)
+        assert all(v == "café" for v in result_df["text"])
+
 
 class TestParseBoolStrings:
     def test_parse_basic_bool_strings(self):
@@ -933,6 +1052,48 @@ class TestParseBoolStrings:
 
         with pytest.raises(ValueError):
             ar.parse_bool_strings(frame, subset=["missing"])
+
+    def test_parse_bool_strings_non_string_true_values_raises(self):
+        """Regression: non-string items in true_values must raise TypeError,
+        not crash with AttributeError on .strip().lower()."""
+        import pandas as pd
+
+        df = pd.DataFrame({"active": ["yes", "no"]}, dtype=object)
+        frame = ar.from_pandas(df)
+
+        with pytest.raises(TypeError, match="true_values must contain only strings"):
+            ar.parse_bool_strings(frame, true_values={1, "yes"})
+
+    def test_parse_bool_strings_non_string_false_values_raises(self):
+        """Regression: non-string items in false_values must raise TypeError,
+        not crash with AttributeError on .strip().lower()."""
+        import pandas as pd
+
+        df = pd.DataFrame({"active": ["yes", "no"]}, dtype=object)
+        frame = ar.from_pandas(df)
+
+        with pytest.raises(TypeError, match="false_values must contain only strings"):
+            ar.parse_bool_strings(frame, false_values={0, "no"})
+
+    def test_parse_bool_strings_none_in_custom_values_raises(self):
+        """Regression: None in true_values/false_values must raise TypeError."""
+        import pandas as pd
+
+        df = pd.DataFrame({"active": ["yes", "no"]}, dtype=object)
+        frame = ar.from_pandas(df)
+
+        with pytest.raises(TypeError, match="true_values must contain only strings"):
+            ar.parse_bool_strings(frame, true_values={"yes", None})
+
+    def test_parse_bool_strings_bool_in_custom_values_raises(self):
+        """Regression: bool items in true_values must raise TypeError."""
+        import pandas as pd
+
+        df = pd.DataFrame({"active": ["yes", "no"]}, dtype=object)
+        frame = ar.from_pandas(df)
+
+        with pytest.raises(TypeError, match="true_values must contain only strings"):
+            ar.parse_bool_strings(frame, true_values={True, "yes"})
 
 
 class TestRenameColumns:
