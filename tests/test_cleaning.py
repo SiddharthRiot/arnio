@@ -698,9 +698,10 @@ class TestNormalizeUnicode:
         assert result_df["text"].iloc[0] == unicodedata.normalize("NFC", "cafe\u0301")
 
     def test_normalize_unicode_no_pandas_roundtrip(self):
-        import arnio.convert as convert_mod
         import pandas as pd
+
         import arnio as ar
+        import arnio.convert as convert_mod
 
         df = pd.DataFrame({"text": ["café", "naïve"]})
         frame = ar.from_pandas(df)
@@ -812,6 +813,7 @@ class TestNormalizeUnicode:
 
     def test_normalize_unicode_attrs_deepcopy(self):
         import pandas as pd
+
         import arnio as ar
 
         df = pd.DataFrame({"text": ["café"]})
