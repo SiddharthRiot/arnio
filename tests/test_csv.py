@@ -1492,6 +1492,7 @@ class TestInferTypeLocaleAndNumericEdgeCases:
         assert frame.dtypes["v"] == "string"
         assert list(df["v"]) == ["1", "9223372036854775808"]
 
+
 class TestEdgeCaseCsvShapes:
     def test_single_row_csv(self, tmp_path):
         csv_path = tmp_path / "single_row.csv"
