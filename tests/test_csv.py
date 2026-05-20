@@ -1491,3 +1491,38 @@ class TestInferTypeLocaleAndNumericEdgeCases:
         df = ar.to_pandas(frame)
         assert frame.dtypes["v"] == "string"
         assert list(df["v"]) == ["1", "9223372036854775808"]
+
+class TestEdgeCaseCsvShapes:
+    def test_single_row_csv(self, tmp_path):
+        csv_path = tmp_path / "single_row.csv"
+        csv_path.write_text("name,age,score\nAlice,30,95\n")
+        frame = ar.read_csv(csv_path)
+        assert frame.shape == (1, 3)
+        assert frame.columns == ["name", "age", "score"]
+        df = ar.to_pandas(frame)
+        assert df["name"].iloc[0] == "Alice"
+        assert df["age"].iloc[0] == 30
+
+    def test_single_column_csv(self, tmp_path):
+        csv_path = tmp_path / "single_col.csv"
+        csv_path.write_text("name\nAlice\nBob\nCharlie\n")
+        frame = ar.read_csv(csv_path)
+        assert frame.shape == (3, 1)
+        assert frame.columns == ["name"]
+        df = ar.to_pandas(frame)
+        assert list(df["name"]) == ["Alice", "Bob", "Charlie"]
+
+    def test_single_row_scan_csv(self, tmp_path):
+        csv_path = tmp_path / "single_row.csv"
+        csv_path.write_text("name,age\nAlice,30\n")
+        schema = ar.scan_csv(csv_path)
+        assert "name" in schema
+        assert "age" in schema
+        assert len(schema) == 2
+
+    def test_single_column_scan_csv(self, tmp_path):
+        csv_path = tmp_path / "single_col.csv"
+        csv_path.write_text("score\n10\n20\n30\n")
+        schema = ar.scan_csv(csv_path)
+        assert "score" in schema
+        assert len(schema) == 1
