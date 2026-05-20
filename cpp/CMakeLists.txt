@@ -18,7 +18,7 @@ target_include_directories(arnio_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 target_compile_features(arnio_core PUBLIC cxx_std_17)
-
+enable_testing()
 macro(arnio_test target source)
     add_executable(${target} ${source})
     target_link_libraries(${target} PRIVATE arnio_core Catch2::Catch2WithMain)
