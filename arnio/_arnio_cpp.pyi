@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, overload
 import numpy as np
 
 __all__ = [
@@ -92,9 +92,14 @@ class Frame:
     def clone(self) -> "Frame": ...
 
     @staticmethod
+    @overload
+    def from_dict(cols: Mapping[str, Sequence[Any]]) -> "Frame": ...
+
+    @staticmethod
+    @overload
     def from_dict(
         cols: Mapping[str, Sequence[Any]],
-        dtype_hints: Optional[Mapping[str, DType]] = None,
+        dtype_hints: Mapping[str, DType],
     ) -> "Frame": ...
 
 
