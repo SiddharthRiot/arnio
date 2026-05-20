@@ -1,9 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
-#include "arnio/csv_reader.h"
 #include <fstream>
 
-using namespace arnio;
+#include "arnio/csv_reader.h"
 
+using namespace arnio;
 
 TEST_CASE("parse_line splits basic CSV row", "[csv_parser]") {
     CsvParser parser;
@@ -46,28 +46,28 @@ TEST_CASE("parse_line respects custom delimiter", "[csv_parser]") {
 
 TEST_CASE("infer_type detects INT64", "[csv_parser]") {
     CsvParser parser;
-    REQUIRE(parser.infer_type("42")    == DType::INT64);
-    REQUIRE(parser.infer_type("-7")    == DType::INT64);
-    REQUIRE(parser.infer_type("0")     == DType::INT64);
+    REQUIRE(parser.infer_type("42") == DType::INT64);
+    REQUIRE(parser.infer_type("-7") == DType::INT64);
+    REQUIRE(parser.infer_type("0") == DType::INT64);
 }
 
 TEST_CASE("infer_type detects FLOAT64", "[csv_parser]") {
     CsvParser parser;
-    REQUIRE(parser.infer_type("3.14")  == DType::FLOAT64);
-    REQUIRE(parser.infer_type("-0.5")  == DType::FLOAT64);
+    REQUIRE(parser.infer_type("3.14") == DType::FLOAT64);
+    REQUIRE(parser.infer_type("-0.5") == DType::FLOAT64);
 }
 
 TEST_CASE("infer_type detects BOOL", "[csv_parser]") {
     CsvParser parser;
-    REQUIRE(parser.infer_type("true")  == DType::BOOL);
+    REQUIRE(parser.infer_type("true") == DType::BOOL);
     REQUIRE(parser.infer_type("false") == DType::BOOL);
-    REQUIRE(parser.infer_type("True")  == DType::BOOL);
+    REQUIRE(parser.infer_type("True") == DType::BOOL);
 }
 
 TEST_CASE("infer_type detects STRING", "[csv_parser]") {
     CsvParser parser;
     REQUIRE(parser.infer_type("alice") == DType::STRING);
-    REQUIRE(parser.infer_type("123abc")== DType::STRING);
+    REQUIRE(parser.infer_type("123abc") == DType::STRING);
 }
 
 TEST_CASE("infer_type detects NULL_TYPE on empty string", "[csv_parser]") {
@@ -80,9 +80,9 @@ TEST_CASE("promote_type INT64 + FLOAT64 = FLOAT64", "[csv_parser]") {
 }
 
 TEST_CASE("promote_type anything + STRING = STRING", "[csv_parser]") {
-    REQUIRE(CsvParser::promote_type(DType::INT64,   DType::STRING) == DType::STRING);
+    REQUIRE(CsvParser::promote_type(DType::INT64, DType::STRING) == DType::STRING);
     REQUIRE(CsvParser::promote_type(DType::FLOAT64, DType::STRING) == DType::STRING);
-    REQUIRE(CsvParser::promote_type(DType::BOOL,    DType::STRING) == DType::STRING);
+    REQUIRE(CsvParser::promote_type(DType::BOOL, DType::STRING) == DType::STRING);
 }
 
 TEST_CASE("promote_type NULL_TYPE + INT64 = INT64", "[csv_parser]") {
@@ -93,18 +93,18 @@ TEST_CASE("is_null_sentinel default only matches empty string", "[csv_parser]") 
     // Known limitation: default config only treats empty string as null.
     // "NA", "N/A", "null" require explicit CsvConfig::null_values. See issue #92.
     CsvParser parser;
-    REQUIRE(parser.is_null_sentinel("")     == true);
-    REQUIRE(parser.is_null_sentinel("NA")   == false);
-    REQUIRE(parser.is_null_sentinel("alice")== false);
+    REQUIRE(parser.is_null_sentinel("") == true);
+    REQUIRE(parser.is_null_sentinel("NA") == false);
+    REQUIRE(parser.is_null_sentinel("alice") == false);
 }
 
 TEST_CASE("is_null_sentinel respects custom null_values config", "[csv_parser]") {
     CsvConfig cfg;
     cfg.null_values = std::vector<std::string>{"NA", "N/A", "null"};
     CsvParser parser(cfg);
-    REQUIRE(parser.is_null_sentinel("NA")   == true);
-    REQUIRE(parser.is_null_sentinel("N/A")  == true);
+    REQUIRE(parser.is_null_sentinel("NA") == true);
+    REQUIRE(parser.is_null_sentinel("N/A") == true);
     REQUIRE(parser.is_null_sentinel("null") == true);
     REQUIRE(parser.is_null_sentinel("NULL") == true);
-    REQUIRE(parser.is_null_sentinel("alice")== false);
+    REQUIRE(parser.is_null_sentinel("alice") == false);
 }

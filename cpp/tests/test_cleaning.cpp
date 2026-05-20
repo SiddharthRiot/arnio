@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+
 #include "arnio/cleaning.h"
 
 using namespace arnio;
@@ -97,8 +98,7 @@ TEST_CASE("drop_nulls subset only checks specified columns", "[cleaning]") {
 
 TEST_CASE("fill_nulls replaces nulls in int column", "[cleaning]") {
     Frame f = make_null_frame();
-    Frame result = fill_nulls(f, CellValue(int64_t(99)),
-                              std::vector<std::string>{"val"});
+    Frame result = fill_nulls(f, CellValue(int64_t(99)), std::vector<std::string>{"val"});
 
     REQUIRE(result.column("val").is_null(1) == false);
     REQUIRE(result.column("val").at(1) == CellValue(int64_t(99)));

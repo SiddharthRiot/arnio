@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+
 #include "arnio/column.h"
 
 using namespace arnio;
@@ -51,10 +52,10 @@ TEST_CASE("Inconsistent column throws on operations", "[column]") {
     ColumnData bad_data = std::vector<std::string>{"hello"};
     Column bad("x", DType::INT64, std::move(bad_data), std::vector<bool>{false});
 
-    REQUIRE_THROWS_AS(bad.clone(),         std::logic_error);
-    REQUIRE_THROWS_AS(bad.at(0),           std::logic_error);
-    REQUIRE_THROWS_AS(bad.push_null(),     std::logic_error);
-    REQUIRE_THROWS_AS(bad.memory_usage(),  std::logic_error);
+    REQUIRE_THROWS_AS(bad.clone(), std::logic_error);
+    REQUIRE_THROWS_AS(bad.at(0), std::logic_error);
+    REQUIRE_THROWS_AS(bad.push_null(), std::logic_error);
+    REQUIRE_THROWS_AS(bad.memory_usage(), std::logic_error);
 }
 
 TEST_CASE("Column bool memory layout is independent per element", "[column]") {
