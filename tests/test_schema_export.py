@@ -14,26 +14,11 @@ Covers:
 
 from __future__ import annotations
 
-import importlib.util
 import pathlib
 
+import arnio as ar
 import pytest
-
-SCHEMA_EXPORT_PATH = (
-    pathlib.Path(__file__).resolve().parents[1] / "arnio" / "schema_export.py"
-)
-
-spec = importlib.util.spec_from_file_location(
-    "arnio.schema_export",
-    SCHEMA_EXPORT_PATH,
-)
-
-schema_export = importlib.util.module_from_spec(spec)
-assert spec.loader is not None
-spec.loader.exec_module(schema_export)
-
-schema_to_dict = schema_export.schema_to_dict
-schema_to_yaml = schema_export.schema_to_yaml
+from arnio.schema_export import schema_to_dict, schema_to_yaml
 
 
 class _FakeField:
@@ -206,3 +191,9 @@ class TestSchemaToYamlFileWrite:
         monkeypatch.chdir(tmp_path)
         schema_to_yaml({"col": "INT64"})  # no path= no file
         assert list(tmp_path.iterdir()) == []
+
+def test_public_api_accessible_via_arnio_namespace():
+    assert hasattr(ar, "schema_to_dict")
+    assert hasattr(ar, "schema_to_yaml")
+    assert ar.schema_to_dict is schema_to_dict
+    assert ar.schema_to_yaml is schema_to_yaml
