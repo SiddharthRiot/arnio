@@ -16,8 +16,9 @@ from __future__ import annotations
 
 import pathlib
 
-import arnio as ar
 import pytest
+
+import arnio as ar
 from arnio.schema_export import schema_to_dict, schema_to_yaml
 
 
@@ -191,6 +192,7 @@ class TestSchemaToYamlFileWrite:
         monkeypatch.chdir(tmp_path)
         schema_to_yaml({"col": "INT64"})  # no path= no file
         assert list(tmp_path.iterdir()) == []
+
 
 def test_public_api_accessible_via_arnio_namespace():
     assert hasattr(ar, "schema_to_dict")
