@@ -486,3 +486,17 @@ class TestScanCsvOnBadLines:
         csv_path.write_text("a,b\n1,2\n")
         with pytest.raises(ValueError):
             ar.scan_csv(csv_path, on_bad_lines="invalid")
+
+    def test_warn_emits_user_warning(self, tmp_path):
+        csv_path = tmp_path / "bad.csv"
+        csv_path.write_text("a,b\n1,2\nbad_row\n3,4\n")
+        with pytest.warns(UserWarning, match="malformed CSV row"):
+            ar.scan_csv(csv_path, on_bad_lines="warn")
+
+    def test_skip_does_not_emit_warning(self, tmp_path):
+        csv_path = tmp_path / "bad.csv"
+        csv_path.write_text("a,b\n1,2\nbad_row\n3,4\n")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            ar.scan_csv(csv_path, on_bad_lines="skip")
+        assert [w for w in caught if w.category is UserWarning] == []
