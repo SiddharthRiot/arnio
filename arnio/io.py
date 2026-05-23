@@ -282,7 +282,7 @@ def _scan_collect_bad_rows(
     path: str, delimiter: str, num_cols: int | None
 ) -> list[str]:
     """Parse CSV to find rows with wrong field count during scan_csv warn mode."""
-    msgs = []
+    msgs: list[str] = []
     with open(path, encoding="utf-8", errors="replace") as f:
         header_line = f.readline().strip()
         if not header_line:
