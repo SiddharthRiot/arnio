@@ -858,7 +858,7 @@ CsvParseResult CsvReader::read(const std::string& path, const std::string& on_ba
 }
 
 std::vector<std::pair<std::string, std::string>> CsvReader::scan_schema(
-    const std::string& path) const {
+    const std::string& path, const std::string& on_bad_lines) const {
     const CsvConfig& config = parser_.config();
     std::ifstream file;
     open_binary_input(file, path);
@@ -925,7 +925,13 @@ std::vector<std::pair<std::string, std::string>> CsvReader::scan_schema(
 
         if (line.empty()) continue;
         parser_.parse_line(line, reusable_fields);
-        validate_row_width(sample_count + 2, num_cols, reusable_fields.size());
+        if (reusable_fields.size() != num_cols) {
+            if (on_bad_lines == "error") {
+                validate_row_width(sample_count + 2, num_cols, reusable_fields.size());
+            } else if (on_bad_lines == "skip" || on_bad_lines == "warn") {
+                continue;
+            }
+        }
         for (size_t i = 0; i < num_cols && i < reusable_fields.size(); ++i) {
             col_types[i] =
                 CsvParser::promote_type(col_types[i], parser_.infer_type(reusable_fields[i]));

@@ -460,3 +460,29 @@ class TestOnBadLinesUsecols:
         assert frames[0].columns == ["a", "d"]
         joined = "\n".join(str(w.message) for w in caught)
         assert "CSV row 3 has 3 fields; expected 4" in joined
+
+
+class TestScanCsvOnBadLines:
+    def test_default_error_raises(self, tmp_path):
+        csv_path = tmp_path / "bad.csv"
+        csv_path.write_text("a,b\n1,2\nbad_row\n3,4\n")
+        with pytest.raises(ar.CsvReadError):
+            ar.scan_csv(csv_path)
+
+    def test_warn_skips_bad_rows(self, tmp_path):
+        csv_path = tmp_path / "bad.csv"
+        csv_path.write_text("a,b\n1,2\nbad_row\n3,4\n")
+        schema = ar.scan_csv(csv_path, on_bad_lines="warn")
+        assert schema == {"a": "int64", "b": "int64"}
+
+    def test_skip_skips_bad_rows(self, tmp_path):
+        csv_path = tmp_path / "bad.csv"
+        csv_path.write_text("a,b\n1,2\nbad_row\n3,4\n")
+        schema = ar.scan_csv(csv_path, on_bad_lines="skip")
+        assert schema == {"a": "int64", "b": "int64"}
+
+    def test_invalid_on_bad_lines_raises(self, tmp_path):
+        csv_path = tmp_path / "good.csv"
+        csv_path.write_text("a,b\n1,2\n")
+        with pytest.raises(ValueError):
+            ar.scan_csv(csv_path, on_bad_lines="invalid")

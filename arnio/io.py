@@ -838,6 +838,7 @@ def scan_csv(
     null_values: list[str] | None = None,
     has_header: bool = True,
     encoding_errors: str = "strict",
+    on_bad_lines: str = "error",
 ) -> dict[str, str]:
     """Return schema (column names + inferred types) without loading data.
 
@@ -923,6 +924,7 @@ def scan_csv(
     _validate_thousands_separator(thousands_separator, decimal_separator)
     delimiter = _validate_delimiter(delimiter)
     encoding_errors = _validate_encoding_errors(encoding_errors)
+    on_bad_lines = _validate_on_bad_lines(on_bad_lines)
     config = _CsvConfig()
     config.delimiter = delimiter
     config.encoding = encoding
@@ -954,7 +956,7 @@ def scan_csv(
             delimiter=delimiter,
             sample_rows=100 if sample_size is None else sample_size,
         ) as native_path:
-            return cast(dict[str, str], reader.scan_schema(native_path))
+            return cast(dict[str, str], reader.scan_schema(native_path, on_bad_lines))
     except RuntimeError as e:
         raise CsvReadError(str(e)) from e
 

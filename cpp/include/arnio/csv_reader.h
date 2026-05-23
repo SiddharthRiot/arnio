@@ -66,7 +66,7 @@ class CsvReader {
     CsvParseResult read(const std::string& path, const std::string& on_bad_lines = "error") const;
 
     // Scan schema only (column names + inferred types)
-    std::vector<std::pair<std::string, std::string>> scan_schema(const std::string& path) const;
+    std::vector<std::pair<std::string, std::string>> scan_schema(const std::string& path, const std::string& on_bad_lines = "error") const;
 
    private:
     CsvParser parser_;
