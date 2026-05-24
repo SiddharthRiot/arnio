@@ -857,8 +857,8 @@ CsvParseResult CsvReader::read(const std::string& path, const std::string& on_ba
     return CsvParseResult{Frame(std::move(columns)), std::move(bad_rows)};
 }
 
-std::vector<std::pair<std::string, std::string>> CsvReader::scan_schema(
-    const std::string& path) const {
+std::pair<std::vector<std::pair<std::string, std::string>>, std::vector<std::string>>
+CsvReader::scan_schema(const std::string& path, const std::string& on_bad_lines) const {
     const CsvConfig& config = parser_.config();
     std::ifstream file;
     open_binary_input(file, path);
@@ -917,15 +917,28 @@ std::vector<std::pair<std::string, std::string>> CsvReader::scan_schema(
 
     std::vector<std::string> reusable_fields;
     reusable_fields.reserve(num_cols);
+    std::vector<std::string> bad_rows;
+    size_t record_number = 1;
 
     while (record_reader.read(line)) {
         if (sample_count >= max_samples) {
             break;
         }
-
+        ++record_number;  // increment before blank-line skip
         if (line.empty()) continue;
         parser_.parse_line(line, reusable_fields);
-        validate_row_width(sample_count + 2, num_cols, reusable_fields.size());
+        if (reusable_fields.size() != num_cols) {
+            if (on_bad_lines == "error") {
+                validate_row_width(record_number, num_cols, reusable_fields.size());
+            } else if (on_bad_lines == "warn") {
+                bad_rows.push_back("CSV row " + std::to_string(record_number) + " has " +
+                                   std::to_string(reusable_fields.size()) + " fields; expected " +
+                                   std::to_string(num_cols));
+                continue;
+            } else if (on_bad_lines == "skip") {
+                continue;
+            }
+        }
         for (size_t i = 0; i < num_cols && i < reusable_fields.size(); ++i) {
             col_types[i] =
                 CsvParser::promote_type(col_types[i], parser_.infer_type(reusable_fields[i]));
@@ -942,7 +955,7 @@ std::vector<std::pair<std::string, std::string>> CsvReader::scan_schema(
     for (size_t i = 0; i < num_cols; ++i) {
         schema.emplace_back(header[i], dtype_to_string(col_types[i]));
     }
-    return schema;
+    return {schema, bad_rows};
 }
 
 // --- CsvChunkReader (streaming) ---
