@@ -818,6 +818,16 @@ def test_validation_result_to_markdown_none_value_redacted():
     assert "[REDACTED]" not in markdown_raw
 
 
+def test_unique_constraint_detects_duplicates(tmp_path):
+    path = tmp_path / "unique.csv"
+    path.write_text("id,value\n1,100\n2,200\n1,300\n3,400\n")
+    result = ar.validate(ar.read_csv(path), {"id": ar.Int64(unique=True)})
+    assert not result.passed
+    assert any(
+        issue.rule == "unique" and issue.column == "id" for issue in result.issues
+    )
+
+
 def test_custom_pattern_validation(tmp_path):
     path = tmp_path / "codes.csv"
     path.write_text("code\nAA-123\nbad\n")
