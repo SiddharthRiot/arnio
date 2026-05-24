@@ -918,14 +918,14 @@ CsvReader::scan_schema(const std::string& path, const std::string& on_bad_lines)
     std::vector<std::string> reusable_fields;
     reusable_fields.reserve(num_cols);
     std::vector<std::string> bad_rows;
-    size_t record_number = config.has_header ? 1 : 0;
+    size_t record_number = 1;
 
     while (record_reader.read(line)) {
         if (sample_count >= max_samples) {
             break;
         }
+        ++record_number;  // increment before blank-line skip
         if (line.empty()) continue;
-        ++record_number;  // increment for every physical row
         parser_.parse_line(line, reusable_fields);
         if (reusable_fields.size() != num_cols) {
             if (on_bad_lines == "error") {

@@ -536,3 +536,29 @@ class TestScanCsvOnBadLines:
         assert "CSV row 3 has 1 fields; expected 2" in msg
         assert "CSV row 5 has 1 fields; expected 2" in msg
         assert schema == {"a": "int64", "b": "int64"}
+
+    def test_warn_blank_row_before_bad_row_correct_number(self, tmp_path):
+        """Blank line before malformed row must not shift the reported row number."""
+        csv_path = tmp_path / "blank_before_bad.csv"
+        csv_path.write_text(
+            "a,b\n"
+            "1,2\n"  # row 2: good
+            "\n"  # row 3: blank
+            "bad\n"  # row 4: bad
+            "3,4\n"  # row 5: good
+        )
+        with pytest.warns(UserWarning) as caught:
+            ar.scan_csv(csv_path, on_bad_lines="warn")
+        assert "CSV row 4 has 1 fields; expected 2" in str(caught[0].message)
+
+    def test_warn_has_header_false_row_numbering(self, tmp_path):
+        """has_header=False: first record is row 1, malformed rows report correctly."""
+        csv_path = tmp_path / "no_header.csv"
+        csv_path.write_text(
+            "1,2\n"  # row 1: good (first record, used as data)
+            "bad\n"  # row 2: bad
+            "3,4\n"  # row 3: good
+        )
+        with pytest.warns(UserWarning) as caught:
+            ar.scan_csv(csv_path, on_bad_lines="warn", has_header=False)
+        assert "CSV row 2 has 1 fields; expected 2" in str(caught[0].message)
