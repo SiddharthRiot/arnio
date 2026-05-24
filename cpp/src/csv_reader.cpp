@@ -930,9 +930,9 @@ CsvReader::scan_schema(const std::string& path, const std::string& on_bad_lines)
             if (on_bad_lines == "error") {
                 validate_row_width(sample_count + 2, num_cols, reusable_fields.size());
             } else if (on_bad_lines == "warn") {
-                bad_rows.push_back("CSV row " + std::to_string(sample_count + 2) +
-                                   " has " + std::to_string(reusable_fields.size()) +
-                                    " fields; expected " + std::to_string(num_cols));
+                bad_rows.push_back("CSV row " + std::to_string(sample_count + 2) + " has " +
+                                   std::to_string(reusable_fields.size()) + " fields; expected " +
+                                   std::to_string(num_cols));
                 continue;
             } else if (on_bad_lines == "skip") {
                 continue;
