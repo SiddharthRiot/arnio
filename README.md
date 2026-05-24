@@ -1781,6 +1781,7 @@ make test      # pytest with coverage
 make lint      # ruff + black
 
 # Windows
+python examples/check_env.py
 pip install -e ".[dev]"
 pre-commit install
 pytest tests/ -v
@@ -1840,6 +1841,15 @@ If `pip install -e ".[dev]"` fails on Windows, work through this checklist befor
    pre-commit install
    pytest tests/ -v
    ```
+
+Before retrying, run the environment doctor:
+
+```bash
+python examples/check_env.py
+```
+
+If it reports `[BUILD BLOCKED]`, fix the missing compiler/CMake/NMake entry
+first. That is a build-toolchain problem, not a test failure.
 
 If you want a quick wheel-build smoke test before running the full suite, use:
 

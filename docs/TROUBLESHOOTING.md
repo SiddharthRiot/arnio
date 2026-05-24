@@ -6,6 +6,16 @@ must build the native C++ extension before most examples and tests can run. The
 gate because import failures are usually build/setup problems, not test logic
 problems.
 
+Run the environment doctor before debugging build failures:
+
+```bash
+python examples/check_env.py
+```
+
+On Windows, `[BUILD BLOCKED]` usually means PowerShell cannot see Visual Studio
+Build Tools commands such as `cl` or `nmake`. Install the `Desktop development
+with C++` workload, then retry from an x64 Developer Command Prompt.
+
 ## MemoryError when reading large CSV files
 
 ### Problem
