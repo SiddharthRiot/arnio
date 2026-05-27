@@ -1793,6 +1793,12 @@ def rename_columns_matching(frame, pattern, replacement):
             f"rename_columns_matching would create duplicate column names: {duplicates}"
         )
 
+    empty_names = [c for c in new_columns if not c.strip()]
+    if empty_names:
+        raise ValueError(
+            "rename_columns_matching would create empty or whitespace-only column names"
+        )
+
     df = df.copy()
     df.columns = new_columns
     return from_pandas(df) if is_arframe else df
