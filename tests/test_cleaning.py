@@ -1,5 +1,7 @@
 """Tests for data cleaning functions."""
 
+import re
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -4177,7 +4179,7 @@ class TestRenameColumnsMatching:
 
     def test_rejects_invalid_regex(self):
         frame = ar.from_pandas(pd.DataFrame({"a": [1]}))
-        with pytest.raises(Exception):
+        with pytest.raises(re.error):
             ar.rename_columns_matching(frame, "[invalid", "")
 
     def test_rejects_duplicate_resulting_names(self):
@@ -4198,3 +4200,13 @@ class TestRenameColumnsMatching:
             [("rename_columns_matching", {"pattern": "^temp_", "replacement": ""})],
         )
         assert "a" in ar.to_pandas(result).columns
+
+    def test_rejects_empty_resulting_name(self):
+        frame = ar.from_pandas(pd.DataFrame({"temp_": [1]}))
+        with pytest.raises(ValueError):
+            ar.rename_columns_matching(frame, "^temp_$", "")
+
+    def test_rejects_whitespace_resulting_name(self):
+        frame = ar.from_pandas(pd.DataFrame({"temp_": [1]}))
+        with pytest.raises(ValueError):
+            ar.rename_columns_matching(frame, "^temp_$", "   ")
