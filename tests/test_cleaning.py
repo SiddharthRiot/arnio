@@ -4145,6 +4145,8 @@ class TestSlugifyColumnNames:
         frame = ar.from_pandas(pd.DataFrame({"a": [1]}))
         with pytest.raises(ValueError):
             ar.slugify_column_names(frame, on_duplicates="ignore")
+
+
 class TestRenameColumnsMatching:
     def test_basic_rename(self):
         frame = ar.from_pandas(
