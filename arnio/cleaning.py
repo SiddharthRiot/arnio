@@ -757,7 +757,7 @@ def winsorize_outliers(
     if not target_columns:
         return frame
 
-    df = to_pandas(frame).copy()
+    df = to_pandas(frame).copy(deep=False)
 
     for column in target_columns:
         lower_bound = df[column].quantile(lower)
@@ -834,7 +834,7 @@ def normalize_whitespace(frame, columns=None):
     >>> clean = ar.pipeline(frame, [("normalize_whitespace",)])
     """
     frame, is_arframe = _validate_frame(frame, allow_pandas=True)
-    df = to_pandas(frame) if is_arframe else frame.copy()
+    df = to_pandas(frame) if is_arframe else frame.copy(deep=False)
 
     if columns is not None:
         cols = list(columns)
@@ -901,7 +901,7 @@ def parse_bool_strings(
             "false_values must be a set/list/tuple of strings, not a bare string"
         )
 
-    df = to_pandas(frame).copy()
+    df = to_pandas(frame).copy(deep=False)
     if true_values is None:
         true_values = {"true", "yes", "y", "1"}
     else:
@@ -1420,7 +1420,7 @@ def round_numeric_columns(
     if isinstance(decimals, bool) or not isinstance(decimals, int):
         raise TypeError("decimals must be an integer")
 
-    df = to_pandas(frame) if is_arframe else frame.copy()
+    df = to_pandas(frame) if is_arframe else frame.copy(deep=False)
 
     if subset is not None:
         cols_to_round = _validate_existing_column_sequence(
@@ -1520,7 +1520,7 @@ def combine_columns(
         return ArFrame(result)
 
     # Pandas fallback
-    df = frame.copy()
+    df = frame.copy(deep=False)
     combined = (
         df[subset_columns].astype("string").fillna("").agg(separator.join, axis=1)
     )
@@ -1643,7 +1643,7 @@ def safe_divide_columns(
     is_zero_or_null = denominator_values.isna() | (denominator_values == 0)
     safe_denom = denominator_values.mask(is_zero_or_null)
     result = numerator_values / safe_denom
-    df = df.copy()
+    df = df.copy(deep=False)
     df[output_column] = result.fillna(fill_value)
 
     return from_pandas(df) if is_arframe else df
@@ -1776,7 +1776,7 @@ def replace_values(
         ),
     )
     # Avoid mutating the caller's DataFrame in the direct pandas API path.
-    df = to_pandas(frame) if is_arframe else frame.copy()
+    df = to_pandas(frame) if is_arframe else frame.copy(deep=False)
 
     if column is not None:
         if not isinstance(column, str) or not column.strip():
@@ -1868,7 +1868,7 @@ def standardize_missing_tokens(frame, tokens=None, subset=None):
     frame, is_arframe = _validate_frame(frame, allow_pandas=True)
     df = to_pandas(frame) if is_arframe else frame
 
-    df = df.copy()
+    df = df.copy(deep=False)
     if isinstance(subset, str):
         raise TypeError(
             f"subset must be a list of column names, not a string. "
@@ -2000,7 +2000,7 @@ def coalesce_columns(
     if output_column in column_names:
         raise ValueError(f"Output column '{output_column}' already exists.")
 
-    df = to_pandas(frame) if is_arframe else frame.copy()
+    df = to_pandas(frame) if is_arframe else frame.copy(deep=False)
 
     # Select the first non-null/non-NaN/non-None value per row
     df[output_column] = df[subset_columns].bfill(axis=1).iloc[:, 0]
